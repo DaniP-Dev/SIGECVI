@@ -11,7 +11,14 @@ export default function ProfileContent() {
   const [email, setEmail] = useState("");
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ visitorName: "", visitorEmail: "", purpose: "" });
+  const [formData, setFormData] = useState({ 
+    visitorName: "", 
+    email: "", 
+    visitDate: "", 
+    entryTime: "",
+    departmentVisited: "", 
+    purpose: "" 
+  });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -48,31 +55,70 @@ export default function ProfileContent() {
     setError("");
     setSuccess("");
 
-    if (!formData.visitorName || !formData.visitorEmail) {
-      setError("Por favor completa todos los campos");
+    if (!formData.visitorName || !formData.email || !formData.departmentVisited) {
+      setError("Por favor completa todos los campos requeridos");
       return;
     }
 
+    // Obtener fecha y hora actual
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+
+    const currentDate = `${year}-${month}-${day}`;
+    const currentTime = `${hours}:${minutes}`;
+
     try {
+      const payload = {
+        visitorName: formData.visitorName,
+        email: formData.email,
+        visitDate: currentDate,
+        entryTime: currentTime,
+        departmentVisited: formData.departmentVisited,
+        purpose: formData.purpose,
+        registeredBy: email,
+      };
+      
+      console.log("[CLIENT] Enviando payload:", payload);
+      
       const res = await fetch("/api/visits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          visitorName: formData.visitorName,
-          visitorEmail: formData.visitorEmail,
-          purpose: formData.purpose,
-          registeredBy: email,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Error al registrar visita");
+      console.log("[CLIENT] Response status:", res.status);
+      const data = await res.json();
+      console.log("[CLIENT] Response data:", data);
+
+      if (!res.ok) {
+        throw new Error(data.error || "Error al registrar visita");
+      }
 
       setSuccess("Visitante registrado correctamente");
-      setFormData({ visitorName: "", visitorEmail: "", purpose: "" });
-      await fetchVisits();
+      setFormData({ 
+        visitorName: "", 
+        email: "", 
+        visitDate: "", 
+        entryTime: "",
+        departmentVisited: "", 
+        purpose: "" 
+      });
+      
+      // Usa el array de visitas devuelto por el servidor en lugar de hacer otro GET
+      if (data.allVisits) {
+        console.log("[CLIENT] Actualizando visitas desde respuesta POST:", data.allVisits);
+        setVisits(data.allVisits);
+      } else {
+        // Fallback: hacer GET si por alguna razón no viene allVisits
+        await fetchVisits();
+      }
     } catch (err) {
-      console.error(err);
-      setError("Error al registrar la visita");
+      console.error("[CLIENT] Error:", err);
+      setError(err.message || "Error al registrar la visita");
     }
   };
 
@@ -166,7 +212,7 @@ export default function ProfileContent() {
                       color: "#0F4C81",
                       fontSize: "0.95rem",
                     }}>
-                      Nombre del Visitante
+                      Nombre del Visitante *
                     </label>
                     <input
                       type="text"
@@ -196,12 +242,12 @@ export default function ProfileContent() {
                       color: "#0F4C81",
                       fontSize: "0.95rem",
                     }}>
-                      Email
+                      Email *
                     </label>
                     <input
                       type="email"
-                      name="visitorEmail"
-                      value={formData.visitorEmail}
+                      name="email"
+                      value={formData.email}
                       onChange={handleInputChange}
                       placeholder="correo@ejemplo.com"
                       style={{
@@ -219,6 +265,103 @@ export default function ProfileContent() {
                   </div>
                 </div>
 
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                  <div>
+                    <label style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "600",
+                      color: "#0F4C81",
+                      fontSize: "0.95rem",
+                    }}>
+                      Fecha de Visita
+                    </label>
+                    <input
+                      type="date"
+                      value={new Date().toISOString().split('T')[0]}
+                      readOnly
+                      style={{
+                        width: "100%",
+                        padding: "12px 14px",
+                        border: "2px solid #A3B1C6",
+                        borderRadius: "8px",
+                        fontSize: "1rem",
+                        backgroundColor: "#f5f5f5",
+                        cursor: "not-allowed",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "600",
+                      color: "#0F4C81",
+                      fontSize: "0.95rem",
+                    }}>
+                      Hora de Ingreso
+                    </label>
+                    <input
+                      type="time"
+                      value={new Date().toTimeString().slice(0, 5)}
+                      readOnly
+                      style={{
+                        width: "100%",
+                        padding: "12px 14px",
+                        border: "2px solid #A3B1C6",
+                        borderRadius: "8px",
+                        fontSize: "1rem",
+                        backgroundColor: "#f5f5f5",
+                        cursor: "not-allowed",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: "600",
+                    color: "#0F4C81",
+                    fontSize: "0.95rem",
+                  }}>
+                    Despacho/Departamento Visitado *
+                  </label>
+                  <select
+                    name="departmentVisited"
+                    value={formData.departmentVisited}
+                    onChange={handleInputChange}
+                    style={{
+                      width: "100%",
+                      padding: "12px 14px",
+                      border: "2px solid #A3B1C6",
+                      borderRadius: "8px",
+                      fontSize: "1rem",
+                      transition: "all 0.3s ease",
+                      boxSizing: "border-box",
+                      backgroundColor: "white",
+                      cursor: "pointer",
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = "#2E8BFF"}
+                    onBlur={(e) => e.target.style.borderColor = "#A3B1C6"}
+                  >
+                    <option value="">-- Selecciona un despacho --</option>
+                    <option value="Despacho del Alcalde">Despacho del Alcalde</option>
+                    <option value="Secretaría General">Secretaría General</option>
+                    <option value="Tesorería">Tesorería</option>
+                    <option value="Planeación">Planeación</option>
+                    <option value="Recursos Humanos">Recursos Humanos</option>
+                    <option value="Contraloría">Contraloría</option>
+                    <option value="Juzgado Municipal">Juzgado Municipal</option>
+                    <option value="Personería Municipal">Personería Municipal</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+
                 <div>
                   <label style={{
                     display: "block",
@@ -234,7 +377,7 @@ export default function ProfileContent() {
                     value={formData.purpose}
                     onChange={handleInputChange}
                     placeholder="¿Cuál es el motivo de la visita?"
-                    rows={4}
+                    rows={3}
                     style={{
                       width: "100%",
                       padding: "12px 14px",
@@ -339,22 +482,20 @@ export default function ProfileContent() {
                   }}>
                     <thead>
                       <tr style={{
-                        borderBottom: "3px solid #2E8BFF",
-                        backgroundColor: "#f0f6ff",
+                        background: "linear-gradient(to right, #0F4C81, #0A1C33)",
+                        color: "white",
                       }}>
                         <th style={{
                           padding: "16px",
                           textAlign: "left",
                           fontWeight: "700",
-                          color: "#0F4C81",
                         }}>
-                          👤 Nombre
+                          👤 Visitante
                         </th>
                         <th style={{
                           padding: "16px",
                           textAlign: "left",
                           fontWeight: "700",
-                          color: "#0F4C81",
                         }}>
                           📧 Email
                         </th>
@@ -362,25 +503,36 @@ export default function ProfileContent() {
                           padding: "16px",
                           textAlign: "left",
                           fontWeight: "700",
-                          color: "#0F4C81",
                         }}>
-                          🎯 Propósito
+                          📅 Fecha
                         </th>
                         <th style={{
                           padding: "16px",
                           textAlign: "left",
                           fontWeight: "700",
-                          color: "#0F4C81",
+                        }}>
+                          🕐 Hora
+                        </th>
+                        <th style={{
+                          padding: "16px",
+                          textAlign: "left",
+                          fontWeight: "700",
+                        }}>
+                          🏢 Despacho
+                        </th>
+                        <th style={{
+                          padding: "16px",
+                          textAlign: "left",
+                          fontWeight: "700",
+                        }}>
+                          📝 Propósito
+                        </th>
+                        <th style={{
+                          padding: "16px",
+                          textAlign: "left",
+                          fontWeight: "700",
                         }}>
                           ✍️ Registrado por
-                        </th>
-                        <th style={{
-                          padding: "16px",
-                          textAlign: "left",
-                          fontWeight: "700",
-                          color: "#0F4C81",
-                        }}>
-                          🕐 Fecha y Hora
                         </th>
                       </tr>
                     </thead>
@@ -400,18 +552,22 @@ export default function ProfileContent() {
                             {visit.visitorName || "-"}
                           </td>
                           <td style={{ padding: "16px", color: "#0F4C81" }}>
-                            {visit.visitorEmail || "-"}
-                          </td>
-                          <td style={{ padding: "16px", color: "#0F4C81", maxWidth: "200px" }}>
-                            {visit.purpose || "-"}
+                            {visit.email || "-"}
                           </td>
                           <td style={{ padding: "16px", color: "#0F4C81" }}>
-                            {visit.registeredBy || "-"}
+                            {visit.visitDate || "-"}
+                          </td>
+                          <td style={{ padding: "16px", color: "#0F4C81" }}>
+                            {visit.entryTime || "-"}
+                          </td>
+                          <td style={{ padding: "16px", color: "#0F4C81" }}>
+                            {visit.departmentVisited || "-"}
+                          </td>
+                          <td style={{ padding: "16px", color: "#0F4C81", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {visit.purpose || "-"}
                           </td>
                           <td style={{ padding: "16px", fontSize: "0.9rem", color: "#A3B1C6" }}>
-                            {visit.timestamp
-                              ? new Date(visit.timestamp).toLocaleString("es-ES")
-                              : "-"}
+                            {visit.registeredBy || "-"}
                           </td>
                         </tr>
                       ))}
