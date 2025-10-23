@@ -1,30 +1,49 @@
-import fs from "fs/promises";
-import path from "path";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import styles from "../page.module.css";
 import LogoutButton from "./LogoutButton";
 
-export default async function Page({ searchParams }) {
-  const userParam = searchParams?.user || null;
+export default function Page() {
+  const searchParams = useSearchParams();
+  const userParam = searchParams.get("user");
 
-  let name = null;
+  const [name, setName] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  if (userParam) {
-    try {
-      const file = path.join(process.cwd(), "public", "users.json");
-      const data = await fs.readFile(file, "utf8");
-      const users = JSON.parse(data);
-      const user = users.find((u) => u.username === userParam);
-      if (user) name = user.name;
-    } catch (err) {
-      console.error("Error reading users.json:", err);
+  useEffect(() => {
+    async function load() {
+      if (!userParam) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("/users.json");
+        if (!res.ok) throw new Error("No se pudo cargar usuarios");
+        const users = await res.json();
+        const user = users.find((u) => u.username === userParam);
+        if (user) setName(user.name);
+        else setName(null);
+      } catch (err) {
+        console.error(err);
+        setName(null);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
+
+    load();
+  }, [userParam]);
 
   return (
     <div className={styles.page}>
       <main className={styles.main}>
         <div className={styles.intro}>
-          {name ? (
+          {loading ? (
+            <h1>Cargando...</h1>
+          ) : name ? (
             <>
               <h1>Bienvenido, {name}!</h1>
               <p>Has ingresado correctamente con el usuario "{userParam}".</p>
