@@ -21,39 +21,55 @@ export async function GET() {
 
 // POST: append a visit { user, meta?... }
 export async function POST(request) {
+	console.log('========== [POST START] ==========');
 	try {
 		const payload = await request.json();
-		console.log('[SERVER POST /api/visits] Payload received:', payload);
+		console.log('[POST] Payload:', JSON.stringify(payload).substring(0, 100));
 		
 		if (!payload) {
-			console.error('[SERVER POST /api/visits] Payload is empty!');
+			console.log('[POST] ❌ Payload is empty!');
 			return NextResponse.json({ error: 'Payload is empty' }, { status: 400 });
 		}
 		
-		// Pequeña pausa para asegurar que JSONBin sincronizó el último cambio
+		console.log('[POST] ⏳ Waiting 100ms...');
 		await new Promise(resolve => setTimeout(resolve, 100));
 		
-		const record = await readBin(VISITS_BIN_ID, { masterKey: MASTER_KEY });
-		console.log('[SERVER POST /api/visits] Current bin record:', record);
+		console.log('[POST] 📖 Reading bin...');
+		let record;
+		try {
+			record = await readBin(VISITS_BIN_ID, { masterKey: MASTER_KEY });
+			console.log('[POST] ✅ readBin success. Record type:', Array.isArray(record) ? 'ARRAY' : 'OBJECT');
+		} catch (readErr) {
+			console.log('[POST] ❌ readBin failed:', readErr.message);
+			throw readErr;
+		}
 		
 		const visits = Array.isArray(record) ? record : record?.visits || [];
+		console.log('[POST] Current visits count:', visits.length);
+		
 		const timestamp = new Date().toISOString();
 		const visit = { ...payload, timestamp };
-		console.log('[SERVER POST /api/visits] New visit object:', visit);
+		console.log('[POST] New visit created with timestamp:', timestamp);
 		
 		const updated = Array.isArray(record) ? [...visits, visit] : { ...record, visits: [...visits, visit] };
-		console.log('[SERVER POST /api/visits] Updated data to send:', updated);
+		console.log('[POST] Updated data ready. New visits count:', updated.length || updated.visits?.length);
 
-		// If the bin is an array we update with the array, otherwise update with the object
-		const result = await updateBin(VISITS_BIN_ID, updated, { masterKey: MASTER_KEY });
-		console.log('[SERVER POST /api/visits] UpdateBin result:', result);
+		console.log('[POST] 💾 Updating bin...');
+		try {
+			const result = await updateBin(VISITS_BIN_ID, updated, { masterKey: MASTER_KEY });
+			console.log('[POST] ✅ updateBin success');
+		} catch (updateErr) {
+			console.log('[POST] ❌ updateBin failed:', updateErr.message);
+			throw updateErr;
+		}
 		
-		// Devolver el array actualizado, no solo el visit individual
-		console.log('[SERVER POST /api/visits] SUCCESS - Returning all visits');
+		console.log('[POST] ✅ SUCCESS - Returning all visits');
+		console.log('========== [POST END - SUCCESS] ==========');
 		return NextResponse.json({ visit, allVisits: updated }, { status: 201 });
 	} catch (err) {
-		console.error('[SERVER POST /api/visits] ERROR:', err);
-		console.error('[SERVER POST /api/visits] ERROR Stack:', err.stack);
+		console.log('[POST] ❌ CAUGHT ERROR:', err.message);
+		console.log('[POST] Error stack:', err.stack?.substring(0, 200));
+		console.log('========== [POST END - ERROR] ==========');
 		return NextResponse.json({ error: String(err) }, { status: err.status || 500 });
 	}
 }
