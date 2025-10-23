@@ -1,66 +1,60 @@
 "use client";
 
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import styles from "../page.module.css";
-import LogoutButton from "./LogoutButton";
 
-export default function Page() {
+export default function Profile() {
   const searchParams = useSearchParams();
-  const userParam = searchParams.get("email");
-
-  const [name, setName] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
-    async function load() {
-      if (!userParam) {
-        setLoading(false);
-        return;
-      }
+    const nameParam = searchParams.get("name");
+    const emailParam = searchParams.get("email");
+    setName(nameParam || "Usuario");
+    setEmail(emailParam || "");
+  }, [searchParams]);
 
-      try {
-        const res = await fetch("/users.json");
-        if (!res.ok) throw new Error("No se pudo cargar usuarios");
-        const users = await res.json();
-  const normalized = String(userParam).trim().toLowerCase();
-  const user = users.find((u) => String(u?.email || "").trim().toLowerCase() === normalized);
-        if (user) setName(user.name);
-        else setName(null);
-      } catch (err) {
-        console.error(err);
-        setName(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, [userParam]);
+  const handleLogout = () => {
+    router.push("/");
+  };
 
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <div className={styles.intro}>
-          {loading ? (
-            <h1>Cargando...</h1>
-          ) : name ? (
-            <>
-              <h1>Bienvenido, {name}!</h1>
-              <p>Has ingresado correctamente con el usuario "{userParam}".</p>
-              <div style={{ marginTop: 20 }}>
-                <LogoutButton>Cerrar sesión</LogoutButton>
-              </div>
-            </>
-          ) : (
-            <>
-              <h1>Usuario no encontrado</h1>
-              <p>No se encontró el usuario especificado. Vuelve e intenta de nuevo.</p>
-              <div style={{ marginTop: 20 }}>
-                <LogoutButton>Volver al login</LogoutButton>
-              </div>
-            </>
-          )}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <div className={styles.logoCircle}>
+              {/* logo */}
+            </div>
+            <div className={styles.brandTitle}>SIGECVI</div>
+            <div className={styles.brandSlogan}>
+              (Sistema Integral de Gestión y Control de Visitas Ciudadanas)
+            </div>
+          </div>
+
+          <div style={{ textAlign: "center", padding: "40px 20px" }}>
+            <h1 style={{ fontSize: "2rem", marginBottom: "20px", color: "#333" }}>
+              Bienvenido
+            </h1>
+            <p style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#000", marginBottom: "10px" }}>
+              {name}
+            </p>
+            {email && (
+              <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "30px" }}>
+                {email}
+              </p>
+            )}
+            <button
+              onClick={handleLogout}
+              className={styles.loginBtn}
+              style={{ marginTop: "20px" }}
+            >
+              SALIR
+            </button>
+          </div>
         </div>
       </main>
     </div>

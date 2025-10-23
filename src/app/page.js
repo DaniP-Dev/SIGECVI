@@ -16,35 +16,45 @@ export default function Home() {
     setError("");
 
     try {
-  // fetch the public users.json
-  const res = await fetch("/users.json");
-      if (!res.ok) throw new Error("No se pudo cargar la lista de usuarios");
-      const users = await res.json();
-
-      // compare email case-insensitively, but password case-sensitively
-      const normalizedEmail = String(email).trim().toLowerCase();
-      const pass = String(password).trim();
-      // debug: show what's being compared (remove in production)
-      console.debug("login: normalizedEmail=", normalizedEmail, "pass=", pass);
-      console.debug("login: users=", users.map(u => ({ email: String(u?.email||"").trim().toLowerCase(), password: String(u?.password||"").trim() })));
-
-      const user = users.find((u) => {
-        const uEmail = String(u?.email || "").trim().toLowerCase();
-        const uPass = String(u?.password || "").trim();
-        return uEmail === normalizedEmail && uPass === pass;
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: String(email).trim(), password: String(password) }),
       });
 
-      if (!user) {
-        // Short message when user not found or credentials wrong
-        setError("No existe");
+      if (res.status === 401) {
+        setError('Credenciales inválidas');
         return;
       }
 
-      // redirect to profile page with username in query string
-  router.push(`/profile?email=${encodeURIComponent(user.email)}`);
+      if (!res.ok) {
+        // try to extract error message from response
+        let msg = 'Error al procesar el login';
+        try {
+          const errBody = await res.json();
+          if (errBody?.error) msg = errBody.error;
+        } catch (e) {
+          // ignore json parse errors
+        }
+        setError(msg);
+        return;
+      }
+
+      const data = await res.json();
+      const user = data?.user;
+      if (!user) {
+        setError('Respuesta inválida del servidor');
+        return;
+      }
+
+      const queryParams = new URLSearchParams({
+        email: user.email,
+        name: user.name || 'Usuario',
+      }).toString();
+      router.push(`/profile?${queryParams}`);
     } catch (err) {
       console.error(err);
-      setError("Error al procesar el login");
+      setError('Error al procesar el login');
     }
   }
 
