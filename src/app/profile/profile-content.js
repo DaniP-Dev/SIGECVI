@@ -188,7 +188,7 @@ export default function ProfileContent() {
       <nav style={{
         background: "linear-gradient(135deg, #0F4C81 0%, #0A1C33 100%)",
         color: "white",
-        padding: "16px 30px",
+        padding: "12px 16px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -196,17 +196,19 @@ export default function ProfileContent() {
         position: "sticky",
         top: 0,
         zIndex: 100,
+        flexWrap: "wrap",
+        gap: "10px",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <div style={{ fontSize: "1.4rem", fontWeight: "800", letterSpacing: "1px", color: "#2E8BFF" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1, minWidth: "120px" }}>
+          <div style={{ fontSize: "1.2rem", fontWeight: "800", letterSpacing: "1px", color: "#2E8BFF" }}>
             SIGECVI
           </div>
-          <div style={{ borderLeft: "2px solid rgba(255,255,255,0.3)", paddingLeft: "20px" }}>
-            <p style={{ margin: "0", fontSize: "0.95rem", fontWeight: "600" }}>
-              {name}
+          <div style={{ borderLeft: "2px solid rgba(255,255,255,0.3)", paddingLeft: "12px", display: "flex", flexDirection: "column", gap: "2px" }}>
+            <p style={{ margin: "0", fontSize: "0.8rem", fontWeight: "600", whiteSpace: "nowrap" }}>
+              {name?.length > 15 ? name.substring(0, 12) + "..." : name}
             </p>
-            <p style={{ margin: "0", fontSize: "0.85rem", opacity: "0.9", color: "#89CFFF" }}>
-              {email}
+            <p style={{ margin: "0", fontSize: "0.7rem", opacity: "0.9", color: "#89CFFF", whiteSpace: "nowrap" }}>
+              {email?.length > 20 ? email.substring(0, 17) + "..." : email}
             </p>
           </div>
         </div>
@@ -216,12 +218,13 @@ export default function ProfileContent() {
             backgroundColor: "rgba(46, 139, 255, 0.2)",
             color: "#89CFFF",
             border: "2px solid #2E8BFF",
-            padding: "8px 24px",
+            padding: "6px 12px",
             borderRadius: "6px",
             cursor: "pointer",
             fontWeight: "600",
-            fontSize: "0.9rem",
+            fontSize: "0.8rem",
             transition: "all 0.3s ease",
+            whiteSpace: "nowrap",
           }}
           onMouseOver={(e) => {
             e.target.style.backgroundColor = "#2E8BFF";
@@ -239,15 +242,15 @@ export default function ProfileContent() {
       <main style={{ padding: "40px 20px" }}>
         <div style={{ maxWidth: "1300px", margin: "0 auto" }}>
           {/* Pestañas de Navegación */}
-          <div style={{ marginBottom: "30px", borderBottom: "2px solid #ccc" }}>
-            <button onClick={() => setActiveTab("register")} style={getTabStyle("register")}>
-              Registrar Visita
+          <div style={{ marginBottom: "20px", borderBottom: "2px solid #ccc", display: "flex", gap: "4px", overflowX: "auto", scrollBehavior: "smooth", paddingBottom: "4px" }}>
+            <button onClick={() => setActiveTab("register")} style={{...getTabStyle("register"), fontSize: "0.85rem", padding: "8px 14px", whiteSpace: "nowrap", flex: "1", minWidth: "100px" }}>
+              Registrar
             </button>
-            <button onClick={() => setActiveTab("history")} style={getTabStyle("history")}>
+            <button onClick={() => setActiveTab("history")} style={{...getTabStyle("history"), fontSize: "0.85rem", padding: "8px 14px", whiteSpace: "nowrap", flex: "1", minWidth: "90px" }}>
               Historial
             </button>
-            <button onClick={() => setActiveTab("search")} style={getTabStyle("search")}>
-              Buscar por Fecha
+            <button onClick={() => setActiveTab("search")} style={{...getTabStyle("search"), fontSize: "0.85rem", padding: "8px 14px", whiteSpace: "nowrap", flex: "1", minWidth: "80px" }}>
+              Buscar
             </button>
           </div>
 
