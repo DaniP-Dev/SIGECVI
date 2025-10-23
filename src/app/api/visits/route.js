@@ -58,3 +58,36 @@ export async function POST(request) {
 	}
 }
 
+// DELETE: remove a visit by its timestamp
+export async function DELETE(request) {
+	try {
+		const { visitId } = await request.json();
+		console.log('[SERVER DELETE /api/visits] visitId to delete:', visitId);
+
+		if (!visitId) {
+			return NextResponse.json({ error: 'Visit ID is required' }, { status: 400 });
+		}
+
+		const record = await readBin(VISITS_BIN_ID, { masterKey: MASTER_KEY });
+		const visits = Array.isArray(record) ? record : record?.visits || [];
+
+		const updatedVisits = visits.filter(v => v.timestamp !== visitId);
+
+		if (updatedVisits.length === visits.length) {
+			console.log('[SERVER DELETE /api/visits] Visit not found with ID:', visitId);
+			return NextResponse.json({ error: 'Visit not found' }, { status: 404 });
+		}
+
+		const updatedData = Array.isArray(record) ? updatedVisits : { ...record, visits: updatedVisits };
+		
+		await updateBin(VISITS_BIN_ID, updatedData, { masterKey: MASTER_KEY });
+		console.log('[SERVER DELETE /api/visits] Visit deleted successfully');
+
+		return NextResponse.json({ message: 'Visit deleted successfully', allVisits: updatedData }, { status: 200 });
+
+	} catch (err) {
+		console.error('[SERVER DELETE /api/visits] ERROR:', err);
+		return NextResponse.json({ error: String(err) }, { status: 500 });
+	}
+}
+

@@ -21,6 +21,9 @@ export default function ProfileContent() {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [activeTab, setActiveTab] = useState("register");
+  const [searchDate, setSearchDate] = useState(new Date().toISOString().split('T')[0]);
+  const [searchResults, setSearchResults] = useState([]);
 
   useEffect(() => {
     const nameParam = searchParams.get("name");
@@ -122,12 +125,65 @@ export default function ProfileContent() {
     }
   };
 
+  const handleDeleteVisit = async (idx) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+      return;
+    }
+
+    try {
+      setError("");
+      setSuccess("");
+      
+      const visitToDelete = visits[idx];
+      const updatedVisits = visits.filter((_, i) => i !== idx);
+      
+      const res = await fetch("/api/visits", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitId: visitToDelete.timestamp }), // Assuming timestamp is the unique ID
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Error al eliminar el registro");
+      }
+
+      setVisits(updatedVisits);
+      setSuccess("Registro eliminado correctamente.");
+      setTimeout(() => setSuccess(""), 3000);
+
+    } catch (err) {
+      console.error("[CLIENT] Error al eliminar:", err);
+      setError(err.message || "No se pudo eliminar el registro.");
+    }
+  };
+
   const handleLogout = () => {
     router.push("/");
   };
 
+  const handleDateSearch = () => {
+    const results = visits.filter(visit => visit.visitDate === searchDate);
+    setSearchResults(results);
+  };
+
+  const getTabStyle = (tabName) => ({
+    padding: "10px 20px",
+    border: "none",
+    borderBottom: activeTab === tabName ? "3px solid #2E8BFF" : "3px solid transparent",
+    backgroundColor: "transparent",
+    cursor: "pointer",
+    fontSize: "1rem",
+    fontWeight: activeTab === tabName ? "bold" : "normal",
+    color: activeTab === tabName ? "#0F4C81" : "#555",
+  });
+
+  const thStyle = { padding: "12px 15px", textAlign: "left", fontWeight: "bold" };
+  const tdStyle = { padding: "12px 15px", borderBottom: "1px solid #eee" };
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#f0f4f8" }}>
       {/* Navbar */}
       <nav style={{
         background: "linear-gradient(135deg, #0F4C81 0%, #0A1C33 100%)",
@@ -182,401 +238,209 @@ export default function ProfileContent() {
 
       <main style={{ padding: "40px 20px" }}>
         <div style={{ maxWidth: "1300px", margin: "0 auto" }}>
-          {/* Formulario de registro */}
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            boxShadow: "0 8px 32px rgba(15, 76, 129, 0.08)",
-            marginBottom: "40px",
-            overflow: "hidden",
-            border: "1px solid #89CFFF",
-          }}>
-            <div style={{
-              background: "linear-gradient(135deg, #2E8BFF 0%, #0F4C81 100%)",
-              padding: "24px 30px",
-              color: "white",
-            }}>
-              <h2 style={{ margin: "0", fontSize: "1.5rem", fontWeight: "700" }}>
-                📝 Registrar Nuevo Visitante
-              </h2>
-            </div>
-
-            <div style={{ padding: "30px" }}>
-              <form onSubmit={handleSubmitVisit} style={{ display: "grid", gap: "20px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-                  <div>
-                    <label style={{
-                      display: "block",
-                      marginBottom: "8px",
-                      fontWeight: "600",
-                      color: "#0F4C81",
-                      fontSize: "0.95rem",
-                    }}>
-                      Nombre del Visitante *
-                    </label>
-                    <input
-                      type="text"
-                      name="visitorName"
-                      value={formData.visitorName}
-                      onChange={handleInputChange}
-                      placeholder="Nombre completo"
-                      style={{
-                        width: "100%",
-                        padding: "12px 14px",
-                        border: "2px solid #A3B1C6",
-                        borderRadius: "8px",
-                        fontSize: "1rem",
-                        transition: "all 0.3s ease",
-                        boxSizing: "border-box",
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = "#2E8BFF"}
-                      onBlur={(e) => e.target.style.borderColor = "#A3B1C6"}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{
-                      display: "block",
-                      marginBottom: "8px",
-                      fontWeight: "600",
-                      color: "#0F4C81",
-                      fontSize: "0.95rem",
-                    }}>
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="correo@ejemplo.com"
-                      style={{
-                        width: "100%",
-                        padding: "12px 14px",
-                        border: "2px solid #A3B1C6",
-                        borderRadius: "8px",
-                        fontSize: "1rem",
-                        transition: "all 0.3s ease",
-                        boxSizing: "border-box",
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = "#2E8BFF"}
-                      onBlur={(e) => e.target.style.borderColor = "#A3B1C6"}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-                  <div>
-                    <label style={{
-                      display: "block",
-                      marginBottom: "8px",
-                      fontWeight: "600",
-                      color: "#0F4C81",
-                      fontSize: "0.95rem",
-                    }}>
-                      Fecha de Visita
-                    </label>
-                    <input
-                      type="date"
-                      value={new Date().toISOString().split('T')[0]}
-                      readOnly
-                      style={{
-                        width: "100%",
-                        padding: "12px 14px",
-                        border: "2px solid #A3B1C6",
-                        borderRadius: "8px",
-                        fontSize: "1rem",
-                        backgroundColor: "#f5f5f5",
-                        cursor: "not-allowed",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{
-                      display: "block",
-                      marginBottom: "8px",
-                      fontWeight: "600",
-                      color: "#0F4C81",
-                      fontSize: "0.95rem",
-                    }}>
-                      Hora de Ingreso
-                    </label>
-                    <input
-                      type="time"
-                      value={new Date().toTimeString().slice(0, 5)}
-                      readOnly
-                      style={{
-                        width: "100%",
-                        padding: "12px 14px",
-                        border: "2px solid #A3B1C6",
-                        borderRadius: "8px",
-                        fontSize: "1rem",
-                        backgroundColor: "#f5f5f5",
-                        cursor: "not-allowed",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                    color: "#0F4C81",
-                    fontSize: "0.95rem",
-                  }}>
-                    Despacho/Departamento Visitado *
-                  </label>
-                  <select
-                    name="departmentVisited"
-                    value={formData.departmentVisited}
-                    onChange={handleInputChange}
-                    style={{
-                      width: "100%",
-                      padding: "12px 14px",
-                      border: "2px solid #A3B1C6",
-                      borderRadius: "8px",
-                      fontSize: "1rem",
-                      transition: "all 0.3s ease",
-                      boxSizing: "border-box",
-                      backgroundColor: "white",
-                      cursor: "pointer",
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#2E8BFF"}
-                    onBlur={(e) => e.target.style.borderColor = "#A3B1C6"}
-                  >
-                    <option value="">-- Selecciona un despacho --</option>
-                    <option value="Despacho del Alcalde">Despacho del Alcalde</option>
-                    <option value="Secretaría General">Secretaría General</option>
-                    <option value="Tesorería">Tesorería</option>
-                    <option value="Planeación">Planeación</option>
-                    <option value="Recursos Humanos">Recursos Humanos</option>
-                    <option value="Contraloría">Contraloría</option>
-                    <option value="Juzgado Municipal">Juzgado Municipal</option>
-                    <option value="Personería Municipal">Personería Municipal</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                    color: "#0F4C81",
-                    fontSize: "0.95rem",
-                  }}>
-                    Propósito de la Visita
-                  </label>
-                  <textarea
-                    name="purpose"
-                    value={formData.purpose}
-                    onChange={handleInputChange}
-                    placeholder="¿Cuál es el motivo de la visita?"
-                    rows={3}
-                    style={{
-                      width: "100%",
-                      padding: "12px 14px",
-                      border: "2px solid #A3B1C6",
-                      borderRadius: "8px",
-                      fontSize: "1rem",
-                      fontFamily: "inherit",
-                      transition: "all 0.3s ease",
-                      boxSizing: "border-box",
-                      resize: "none",
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#2E8BFF"}
-                    onBlur={(e) => e.target.style.borderColor = "#A3B1C6"}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  style={{
-                    background: "linear-gradient(135deg, #2E8BFF 0%, #0F4C81 100%)",
-                    color: "white",
-                    border: "none",
-                    padding: "14px 28px",
-                    borderRadius: "8px",
-                    fontSize: "1rem",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    boxShadow: "0 4px 15px rgba(46, 139, 255, 0.3)",
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.boxShadow = "0 6px 20px rgba(46, 139, 255, 0.5)";
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.boxShadow = "0 4px 15px rgba(46, 139, 255, 0.3)";
-                  }}
-                >
-                  ✓ REGISTRAR VISITANTE
-                </button>
-
-                {error && (
-                  <div style={{
-                    backgroundColor: "#ffebee",
-                    color: "#c62828",
-                    padding: "12px 16px",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #c62828",
-                    fontWeight: "500",
-                  }}>
-                    {error}
-                  </div>
-                )}
-                {success && (
-                  <div style={{
-                    backgroundColor: "#e8f5e9",
-                    color: "#2e7d32",
-                    padding: "12px 16px",
-                    borderRadius: "8px",
-                    borderLeft: "4px solid #2e7d32",
-                    fontWeight: "500",
-                  }}>
-                    {success}
-                  </div>
-                )}
-              </form>
-            </div>
+          {/* Pestañas de Navegación */}
+          <div style={{ marginBottom: "30px", borderBottom: "2px solid #ccc" }}>
+            <button onClick={() => setActiveTab("register")} style={getTabStyle("register")}>
+              Registrar Visita
+            </button>
+            <button onClick={() => setActiveTab("history")} style={getTabStyle("history")}>
+              Historial
+            </button>
+            <button onClick={() => setActiveTab("search")} style={getTabStyle("search")}>
+              Buscar por Fecha
+            </button>
           </div>
 
-          {/* Lista de visitas */}
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            boxShadow: "0 8px 32px rgba(15, 76, 129, 0.08)",
-            overflow: "hidden",
-            border: "1px solid #89CFFF",
-          }}>
-            <div style={{
-              background: "linear-gradient(135deg, #2E8BFF 0%, #0F4C81 100%)",
-              padding: "24px 30px",
-              color: "white",
-            }}>
-              <h2 style={{ margin: "0", fontSize: "1.5rem", fontWeight: "700" }}>
-                📋 Historial de Visitas ({visits.length})
-              </h2>
-            </div>
+          {/* Contenido de las Pestañas */}
+          {activeTab === "register" && (
+             <div style={{
+                backgroundColor: "white",
+                borderRadius: "12px",
+                boxShadow: "0 8px 32px rgba(15, 76, 129, 0.08)",
+                marginBottom: "40px",
+                overflow: "hidden",
+                border: "1px solid #89CFFF",
+              }}>
+                <div style={{
+                  background: "linear-gradient(135deg, #2E8BFF 0%, #0F4C81 100%)",
+                  padding: "24px 30px",
+                  color: "white",
+                }}>
+                  <h2 style={{ margin: "0", fontSize: "1.5rem", fontWeight: "700" }}>
+                    📝 Registrar Nuevo Visitante
+                  </h2>
+                </div>
+    
+                <div style={{ padding: "30px" }}>
+                  <form onSubmit={handleSubmitVisit} style={{ display: "grid", gap: "20px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#0F4C81", fontSize: "0.95rem" }}>
+                          Nombre del Visitante *
+                        </label>
+                        <input
+                          type="text"
+                          name="visitorName"
+                          value={formData.visitorName}
+                          onChange={handleInputChange}
+                          placeholder="Nombre completo"
+                          style={{ width: "100%", padding: "12px 14px", border: "2px solid #A3B1C6", borderRadius: "8px", fontSize: "1rem", transition: "all 0.3s ease", boxSizing: "border-box" }}
+                        />
+                      </div>
+    
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#0F4C81", fontSize: "0.95rem" }}>
+                          Email *
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          placeholder="correo@ejemplo.com"
+                          style={{ width: "100%", padding: "12px 14px", border: "2px solid #A3B1C6", borderRadius: "8px", fontSize: "1rem", transition: "all 0.3s ease", boxSizing: "border-box" }}
+                        />
+                      </div>
+                    </div>
+    
+                    <div>
+                      <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#0F4C81", fontSize: "0.95rem" }}>
+                        Despacho/Departamento Visitado *
+                      </label>
+                      <select
+                        name="departmentVisited"
+                        value={formData.departmentVisited}
+                        onChange={handleInputChange}
+                        style={{ width: "100%", padding: "12px 14px", border: "2px solid #A3B1C6", borderRadius: "8px", fontSize: "1rem", transition: "all 0.3s ease", boxSizing: "border-box", backgroundColor: "white", cursor: "pointer" }}
+                      >
+                        <option value="">-- Selecciona un despacho --</option>
+                        <option value="Despacho del Alcalde">Despacho del Alcalde</option>
+                        <option value="Secretaría General">Secretaría General</option>
+                        <option value="Tesorería">Tesorería</option>
+                        <option value="Planeación">Planeación</option>
+                        <option value="Recursos Humanos">Recursos Humanos</option>
+                        <option value="Contraloría">Contraloría</option>
+                        <option value="Juzgado Municipal">Juzgado Municipal</option>
+                        <option value="Personería Municipal">Personería Municipal</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                    </div>
+    
+                    <div>
+                      <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#0F4C81", fontSize: "0.95rem" }}>
+                        Propósito de la Visita
+                      </label>
+                      <textarea
+                        name="purpose"
+                        value={formData.purpose}
+                        onChange={handleInputChange}
+                        placeholder="¿Cuál es el motivo de la visita?"
+                        rows={3}
+                        style={{ width: "100%", padding: "12px 14px", border: "2px solid #A3B1C6", borderRadius: "8px", fontSize: "1rem", fontFamily: "inherit", transition: "all 0.3s ease", boxSizing: "border-box", resize: "none" }}
+                      />
+                    </div>
+    
+                    <button
+                      type="submit"
+                      style={{ background: "linear-gradient(135deg, #2E8BFF 0%, #0F4C81 100%)", color: "white", border: "none", padding: "14px 28px", borderRadius: "8px", fontSize: "1rem", fontWeight: "700", cursor: "pointer", transition: "all 0.3s ease", boxShadow: "0 4px 15px rgba(46, 139, 255, 0.3)" }}
+                    >
+                      ✓ REGISTRAR VISITANTE
+                    </button>
+    
+                    {error && <div style={{ backgroundColor: "#ffebee", color: "#c62828", padding: "12px 16px", borderRadius: "8px", borderLeft: "4px solid #c62828", fontWeight: "500" }}>{error}</div>}
+                    {success && <div style={{ backgroundColor: "#e8f5e9", color: "#2e7d32", padding: "12px 16px", borderRadius: "8px", borderLeft: "4px solid #2e7d32", fontWeight: "500" }}>{success}</div>}
+                  </form>
+                </div>
+              </div>
+          )}
 
-            <div style={{ padding: "30px" }}>
-              {loading ? (
-                <div style={{ textAlign: "center", padding: "40px", color: "#A3B1C6" }}>
-                  <p style={{ fontSize: "1.1rem" }}>⏳ Cargando visitas...</p>
-                </div>
-              ) : visits.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px", color: "#A3B1C6" }}>
-                  <p style={{ fontSize: "1.1rem" }}>📭 No hay visitantes registrados aún</p>
-                </div>
-              ) : (
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    fontSize: "0.95rem",
-                  }}>
+          {activeTab === "history" && (
+            <div style={{ backgroundColor: "white", borderRadius: "12px", boxShadow: "0 8px 32px rgba(15, 76, 129, 0.08)", overflow: "hidden", border: "1px solid #89CFFF" }}>
+              <div style={{ background: "linear-gradient(135deg, #2E8BFF 0%, #0F4C81 100%)", padding: "24px 30px", color: "white" }}>
+                <h2 style={{ margin: "0", fontSize: "1.5rem", fontWeight: "700" }}>📋 Historial de Visitas ({visits.length})</h2>
+              </div>
+              <div style={{ padding: "0", overflowX: "auto" }}>
+                {loading ? <p style={{padding: "20px"}}>Cargando historial...</p> : (
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                      <tr style={{
-                        background: "linear-gradient(to right, #0F4C81, #0A1C33)",
-                        color: "white",
-                      }}>
-                        <th style={{
-                          padding: "16px",
-                          textAlign: "left",
-                          fontWeight: "700",
-                        }}>
-                          👤 Visitante
-                        </th>
-                        <th style={{
-                          padding: "16px",
-                          textAlign: "left",
-                          fontWeight: "700",
-                        }}>
-                          📧 Email
-                        </th>
-                        <th style={{
-                          padding: "16px",
-                          textAlign: "left",
-                          fontWeight: "700",
-                        }}>
-                          📅 Fecha
-                        </th>
-                        <th style={{
-                          padding: "16px",
-                          textAlign: "left",
-                          fontWeight: "700",
-                        }}>
-                          🕐 Hora
-                        </th>
-                        <th style={{
-                          padding: "16px",
-                          textAlign: "left",
-                          fontWeight: "700",
-                        }}>
-                          🏢 Despacho
-                        </th>
-                        <th style={{
-                          padding: "16px",
-                          textAlign: "left",
-                          fontWeight: "700",
-                        }}>
-                          📝 Propósito
-                        </th>
-                        <th style={{
-                          padding: "16px",
-                          textAlign: "left",
-                          fontWeight: "700",
-                        }}>
-                          ✍️ Registrado por
-                        </th>
+                      <tr style={{ background: "linear-gradient(to right, #0F4C81, #0A1C33)", color: "white" }}>
+                        <th style={thStyle}>Visitante</th>
+                        <th style={thStyle}>Email</th>
+                        <th style={thStyle}>Fecha</th>
+                        <th style={thStyle}>Hora</th>
+                        <th style={thStyle}>Departamento</th>
+                        <th style={thStyle}>Propósito</th>
+                        <th style={thStyle}>Registrado por</th>
+                        <th style={thStyle}>Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
                       {visits.map((visit, idx) => (
-                        <tr
-                          key={idx}
-                          style={{
-                            borderBottom: "1px solid #89CFFF",
-                            transition: "background-color 0.2s ease",
-                            backgroundColor: idx % 2 === 0 ? "#fafbff" : "white",
-                          }}
-                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#e6f0ff"}
-                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? "#fafbff" : "white"}
-                        >
-                          <td style={{ padding: "16px", color: "#0A1C33", fontWeight: "500" }}>
-                            {visit.visitorName || "-"}
-                          </td>
-                          <td style={{ padding: "16px", color: "#0F4C81" }}>
-                            {visit.email || "-"}
-                          </td>
-                          <td style={{ padding: "16px", color: "#0F4C81" }}>
-                            {visit.visitDate || "-"}
-                          </td>
-                          <td style={{ padding: "16px", color: "#0F4C81" }}>
-                            {visit.entryTime || "-"}
-                          </td>
-                          <td style={{ padding: "16px", color: "#0F4C81" }}>
-                            {visit.departmentVisited || "-"}
-                          </td>
-                          <td style={{ padding: "16px", color: "#0F4C81", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {visit.purpose || "-"}
-                          </td>
-                          <td style={{ padding: "16px", fontSize: "0.9rem", color: "#A3B1C6" }}>
-                            {visit.registeredBy || "-"}
+                        <tr key={visit.timestamp || idx} style={{ borderBottom: "1px solid #eee", backgroundColor: idx % 2 === 0 ? "#fafbff" : "white" }}>
+                          <td style={tdStyle}>{visit.visitorName}</td>
+                          <td style={tdStyle}>{visit.email}</td>
+                          <td style={tdStyle}>{visit.visitDate}</td>
+                          <td style={tdStyle}>{visit.entryTime}</td>
+                          <td style={tdStyle}>{visit.departmentVisited}</td>
+                          <td style={tdStyle}>{visit.purpose}</td>
+                          <td style={tdStyle}>{visit.registeredBy}</td>
+                          <td style={tdStyle}>
+                            <button onClick={() => handleDeleteVisit(idx)} style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer' }}>
+                              Eliminar
+                            </button>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "search" && (
+            <div style={{ backgroundColor: "white", borderRadius: "12px", boxShadow: "0 8px 32px rgba(15, 76, 129, 0.08)", padding: "30px", border: "1px solid #89CFFF" }}>
+              <h2 style={{ marginTop: 0, color: "#0F4C81" }}>Buscar Visitas por Fecha</h2>
+              <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+                <input type="date" value={searchDate} onChange={(e) => setSearchDate(e.target.value)} style={{ padding: "10px", borderRadius: "8px", border: "2px solid #A3B1C6", fontSize: "1rem" }} />
+                <button onClick={handleDateSearch} style={{ padding: "10px 20px", backgroundColor: "#2E8BFF", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+                  Buscar
+                </button>
+              </div>
+              {searchResults.length > 0 ? (
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ background: "linear-gradient(to right, #0F4C81, #0A1C33)", color: "white" }}>
+                        <th style={thStyle}>Visitante</th>
+                        <th style={thStyle}>Email</th>
+                        <th style={thStyle}>Fecha</th>
+                        <th style={thStyle}>Hora</th>
+                        <th style={thStyle}>Departamento</th>
+                        <th style={thStyle}>Propósito</th>
+                        <th style={thStyle}>Registrado por</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {searchResults.map((visit, idx) => (
+                        <tr key={visit.timestamp || idx} style={{ borderBottom: "1px solid #eee" }}>
+                          <td style={tdStyle}>{visit.visitorName}</td>
+                          <td style={tdStyle}>{visit.email}</td>
+                          <td style={tdStyle}>{visit.visitDate}</td>
+                          <td style={tdStyle}>{visit.entryTime}</td>
+                          <td style={tdStyle}>{visit.departmentVisited}</td>
+                          <td style={tdStyle}>{visit.purpose}</td>
+                          <td style={tdStyle}>{visit.registeredBy}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
+              ) : (
+                <p>No se encontraron visitas para la fecha seleccionada.</p>
               )}
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>
