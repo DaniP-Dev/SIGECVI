@@ -7,7 +7,7 @@ import LogoutButton from "./LogoutButton";
 
 export default function Page() {
   const searchParams = useSearchParams();
-  const userParam = searchParams.get("user");
+  const userParam = searchParams.get("email");
 
   const [name, setName] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,8 @@ export default function Page() {
         const res = await fetch("/users.json");
         if (!res.ok) throw new Error("No se pudo cargar usuarios");
         const users = await res.json();
-        const user = users.find((u) => u.username === userParam);
+  const normalized = String(userParam).trim().toLowerCase();
+  const user = users.find((u) => String(u?.email || "").trim().toLowerCase() === normalized);
         if (user) setName(user.name);
         else setName(null);
       } catch (err) {

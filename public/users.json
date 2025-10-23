@@ -1,17 +1,12 @@
 [
-  {
-    "username": "maria",
-    "password": "1234",
-    "name": "María García"
-  },
-  {
-    "username": "juan",
-    "password": "abcd",
-    "name": "Juan Pérez"
-  },
-  {
-    "username": "ana",
-    "password": "pass",
-    "name": "Ana López"
-  }
+    {
+        "email": "andresvargas@sigecvi.com",
+        "password": "andressigecvi01",
+        "name": "andrés vargas"
+    },
+    {
+        "email": "hernandobram@sigecvi.com",
+        "password": "hernandosigecvi02",
+        "name": "hernando bram"
+    }
 ]
