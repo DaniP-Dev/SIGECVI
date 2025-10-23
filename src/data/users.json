@@ -1,0 +1,17 @@
+[
+  {
+    "username": "andresvargas@SIGECVI.com",
+    "password": "1234",
+    "name": "Andrés Vargas"
+  },
+  {
+    "username": "hernandobram@SIGECVI.com",
+    "password": "abcd",
+    "name": "Hernando Bram"
+  },
+  {
+    "username": "ana",
+    "password": "pass",
+    "name": "Ana López"
+  }
+]
